@@ -84,6 +84,7 @@ cd ~ && dsh --profile botspike --no-open --port 0      # 端口随机，日志�
 # 连 ws://127.0.0.1:<port>/ws/mobile，发 hello 后发 host-api 帧
 ```
 
+> profile 的完整说明（用途、凭据立场、删除方式）见 `dsh-bot-webui/docs/dev-harness.md`。
 > profile 里必须 `.npmrc` 写 `auto-install-peers=false`，并显式 pin `@deepseek-ai/dsh-llm|dsh-tools|dsh-web`
 > 到 `0.2.1-rc.3`。否则 pnpm 会把 `ds-bot` 的 `*` peer 解析成陈旧的 `0.0.1-rc.1`，它牵出
 > `@deepseek-ai/dsh-type-meta`（未发布到 registry）导致安装失败。
