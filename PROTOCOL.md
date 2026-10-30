@@ -1233,6 +1233,13 @@ Control/旧单连接接收全局模式状态增量，不受所订阅会话过滤
 - `turn/start|end` / `step/start|end` → `{turn, step, reason?, reasonDetails?}`，保留原有 `reason` 字符串；`reasonDetails` 提供结构化终态错误或取消来源。
 - `llm/retry` → `{turn, step, retryId, retry, maxRetries?, delayMs, provider, mode, failure}`。
 - `llm/retry-started` → `{turn, step, retryId, retry}`。
+- `job/settled` → `{jobId?, kind?, label?, toolCall?: {callId, rootCallId?}, startedAt?, finishedAt?, status?, cause?, producerReported?, detail?}`
+
+`job/settled` 是工具调用与后台任务的**结算**事件，字段名与历史侧 `JobSettledData` 逐一对应（不自造命名）。
+**时长 = `finishedAt - startedAt`**，与历史视图用同一算法，因此协议不额外提供 `durationMs`，避免两个真值。
+可选字段在缺失时**不会出现**（不发 `undefined` / `null` 占位）；`owner` 是会话标识，已由帧根节点的
+`sessionId` 表达，不重复下发。这是**可选增量**：忽略它的旧客户端仍收到同样的帧，不需要任何改动；
+`job/registered`（任务开始）仍只保留 `type`，因为它不携带 `job/settled` 里没有的信息。
 
 `failure` 保留上游提供的 `message/code/status/providerRetryAfterMs/requestId` 等诊断字段。工具 `output` 同时包含标准输出、`[stderr]`、沙箱提示和退出状态标记；超过 16000 字符时保留开头和末尾并设置 `outputTruncated: true`。需要未裁剪的完整内容时，按对应 seq 请求不带 `view: "conversation"` 的历史。
 
@@ -1278,7 +1285,8 @@ DSH Web 的“深度求索中，用时 22 秒 ···”是客户端文案，不�
 
 | 版本 | 新增 |
 |---|---|
-| v0.12.0（当前源码） | 新增工作区管理：`workspace-rename` / `workspace-delete` 请求、`workspace-renamed` / `workspace-deleted` 回包与 `workspace-manage-v1` 能力；代理 Host `workspace/rename`、`workspace/delete`，错误帧透传 Host 错误码 |
+| v0.12.1（当前源码） | 实时 `job/settled` 补齐工具/任务标识与计时：`jobId` / `kind` / `label` / `toolCall{callId,rootCallId}` / `startedAt` / `finishedAt` / `status` / `cause` / `producerReported` / `detail`，字段名与历史侧 `JobSettledData` 一致，时长由 `finishedAt - startedAt` 得出。纯增量：已有帧字段语义不变，旧客户端忽略新增字段即可；`job/registered` 不变 |
+| v0.12.0 | 新增工作区管理：`workspace-rename` / `workspace-delete` 请求、`workspace-renamed` / `workspace-deleted` 回包与 `workspace-manage-v1` 能力；代理 Host `workspace/rename`、`workspace/delete`，错误帧透传 Host 错误码 |
 | v0.10.4 | 精简 `sessions` 列表投影，仅保留 `asOfSeq` 和 `values.title`，修复大量会话通过公网隧道传输时超时的问题；保留会话元信息和历史完整投影，现有移动客户端无需配套修改 |
 | v0.10.3 | 适配 DSH 0.2.1-rc.2；为 Remote 请求及实时订阅补齐 Connection Peer，修复读取 `signal` 时的空值报错，并随网关停止释放 Peer；移动端协议保持不变 |
 | v0.10.2 | 补齐 `deliverables/presented` 文件卡片实时字段；新增 `file-references-v1` 能力与 `file-resolve` 安全文件引用解析；复用现有分块下载支持移动端预览接入 |
